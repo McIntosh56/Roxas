@@ -64,30 +64,6 @@ NS_ASSUME_NONNULL_END
             NSIndexPath *localIndexPath = [weakSelf dataSource:dataSource localIndexPathForGlobalIndexPath:indexPath];
             dataSource.cellConfigurationHandler(cell, item, localIndexPath);
         };
-        
-        self.prefetchHandler = ^NSOperation * _Nullable(id  _Nonnull item, NSIndexPath * _Nonnull indexPath, void (^ _Nonnull completionHandler)(id _Nullable, NSError * _Nullable)) {
-            RSTCellContentDataSource *dataSource = [weakSelf dataSourceForIndexPath:indexPath];
-            if (dataSource == nil || dataSource.prefetchHandler == nil)
-            {
-                return nil;
-            }
-            
-            NSIndexPath *localIndexPath = [weakSelf dataSource:dataSource localIndexPathForGlobalIndexPath:indexPath];
-            
-            NSOperation *operation = dataSource.prefetchHandler(item, localIndexPath, completionHandler);
-            return operation;
-        };
-        
-        self.prefetchCompletionHandler = ^(__kindof UIView<RSTCellContentCell> * _Nonnull cell, id  _Nullable item, NSIndexPath * _Nonnull indexPath, NSError * _Nullable error) {
-            RSTCellContentDataSource *dataSource = [weakSelf dataSourceForIndexPath:indexPath];
-            if (dataSource == nil || dataSource.prefetchCompletionHandler == nil)
-            {
-                return;
-            }
-            
-            NSIndexPath *localIndexPath = [weakSelf dataSource:dataSource localIndexPathForGlobalIndexPath:indexPath];
-            dataSource.prefetchCompletionHandler(cell, item, localIndexPath, error);
-        };
     }
     
     return self;
@@ -200,6 +176,23 @@ NS_ASSUME_NONNULL_END
     
     id item = [dataSource itemAtIndexPath:localIndexPath];
     return item;
+}
+
+- (void)prefetchItemAtIndexPath:(NSIndexPath *)indexPath completionHandler:(void (^_Nullable)(id prefetchItem, NSError *error))completionHandler
+{
+    if (self.prefetchHandler != nil)
+    {
+        return [super prefetchItemAtIndexPath:indexPath completionHandler:completionHandler];
+    }
+    
+    RSTCellContentDataSource *dataSource = [self dataSourceForIndexPath:indexPath];
+    if (dataSource == nil)
+    {
+        @throw [NSException exceptionWithName:NSRangeException reason:nil userInfo:nil];
+    }
+    
+    NSIndexPath *localIndexPath = [self dataSource:dataSource localIndexPathForGlobalIndexPath:indexPath];
+    [dataSource prefetchItemAtIndexPath:localIndexPath completionHandler:completionHandler];
 }
 
 - (void)filterContentWithPredicate:(nullable NSPredicate *)predicate
